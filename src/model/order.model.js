@@ -22,19 +22,28 @@ const orderItemSchema = new mongoose.Schema({
         trim: true
     },
     image: {
-        type: [String],
+        type: String,
         required: true,
         trim: true
     },
     price: {
         type: Number,
         required: true,
-        min: 0
+        min: 0,
+        validate:{
+            validator:Number.isInteger,
+            message:"price must be an whole number"
+        }
     },
     quantity: {
         type: Number,
         required: true,
-        min: 1
+        min: 1,
+        max:10,
+        validate:{
+            validator:Number.isInteger,
+            message:"Quantity must be an whole number"
+        }
     },
     lineTotal: {
         type: Number,
@@ -76,6 +85,7 @@ const orderSchema = new mongoose.Schema({
         email: {
             type: String,
             required: true,
+            lowercase:true,
             trim: true
         },
         phone: {
@@ -103,7 +113,6 @@ const orderSchema = new mongoose.Schema({
     },
     items: {
         type: [orderItemSchema],
-        required: true,
         validate: {
             validator: function (value) {
                 return value.length > 0;
@@ -127,6 +136,12 @@ const orderSchema = new mongoose.Schema({
         default: "COD",
         required: true
     },
+    shippingFee: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0
+    },
     status: {
         type: String,
         enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
@@ -145,8 +160,15 @@ const orderSchema = new mongoose.Schema({
     timestamps: true
 });
 
+orderSchema.pre("validate", function () {
+    this.items.forEach(i => { i.lineTotal = i.price * i.quantity });
+    this.subtotal = this.items.reduce((s, i) => s + i.lineTotal, 0);
+    this.total = this.subtotal + this.shippingFee;
+});
+
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ status: 1 });
-orderSchema.index({ "item.product": 1 })
+orderSchema.index({ "items.product": 1 })
+orderSchema.index({ customer: 1, createdAt: -1 })
 
 export const Order = mongoose.model("Order", orderSchema);

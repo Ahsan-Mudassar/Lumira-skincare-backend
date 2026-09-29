@@ -15,11 +15,18 @@ const reviewSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: 1,
-        max: 5
+        max: 5,
+        validate:{
+            validator:Number.isInteger,
+            message:"Rating must be an integer"
+        }
     },
     comment: {
         type: String,
-        required: true
+        required: true,
+        trim:true,
+        minlength:10,
+        maxlength:1000
     },
     isApproved: {
         type: Boolean,
@@ -28,7 +35,13 @@ const reviewSchema = new mongoose.Schema({
     isVerifiedPurchase: {
         type: Boolean,
         default: false
+    },
+    order: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Order"
     }
 }, { timestamps: true })
+
+reviewSchema.index({ product: 1, customer: 1 }, { unique: true });
 
 export const Review = mongoose.model("Review", reviewSchema)
