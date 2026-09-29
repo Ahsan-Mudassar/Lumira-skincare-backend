@@ -107,7 +107,7 @@ const productSchema = new mongoose.Schema(
     }, { timestamps: true }
 )
 
-productSchema.pre("validate", async function (next) {
+productSchema.pre("validate", async function () {
     if (this.isModified("name") || !this.slug) {
         const baseSlug = slugify(this.name, { lower: true, strict: true });
         let slug = baseSlug;
@@ -116,9 +116,8 @@ productSchema.pre("validate", async function (next) {
         while (await mongoose.models.Product.exists({ slug, _id: { $ne: this._id } })) {
             slug = `${baseSlug}-${counter}`;
             counter++;
-            this.slug = slug;
         }
-        next();
+        this.slug = slug;
     }
 });
 
