@@ -43,6 +43,4 @@ categorySchema.pre("validate", async function () {
     }
 });
 
-const Category = mongoose.model("Category", categorySchema);
-
-export default Category;
+export const Category = mongoose.model("Category", categorySchema);
