@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import {  errorHandler, notFound } from "./middlewares/errorHandler.middleware.js";
+import { errorHandler, notFound, duplicateErrorHandler } from "./middlewares/errorHandler.middleware.js";
 dotenv.config();
 
 const app = express()
@@ -20,5 +20,6 @@ app.get("/api/v1/health", (req, res) => {
 
 app.use(notFound);
 app.use(errorHandler);
+app.use(duplicateErrorHandler);
 
 export default app;
