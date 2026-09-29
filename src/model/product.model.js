@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import slugify from 'slugify';
 
 const productSchema = new mongoose.Schema(
     {
@@ -18,7 +19,7 @@ const productSchema = new mongoose.Schema(
         },
         description: {
             type: String,
-            trim:true,
+            trim: true,
             required: [true, "Product description is required"],
             maxlength: [1000, "Product description must be less than 1000 characters"]
         },
@@ -105,6 +106,25 @@ const productSchema = new mongoose.Schema(
         }
     }, { timestamps: true }
 )
+
+productSchema.pre("validate", async function (next) {
+    if (this.isModified("name") || !this.slug) {
+        const baseSlug = slugify(this.name, { lower: true, strict: true });
+        let slug = baseSlug;
+        let counter = 1;
+
+        while (await mongoose.models.Product.exists({ slug, _id: { $ne: this._id } })) {
+            slug = `${baseSlug}-${counter}`;
+            counter++;
+            this.slug = slug;
+        }
+        next();
+    }
+});
+
+productSchema.index({ category: 1 });
+productSchema.index({ isActive: 1, createdAt: -1 });
+productSchema.index({ name: "text", description: "text" });
 
 const Product = mongoose.model('Product', productSchema);
 export default Product;

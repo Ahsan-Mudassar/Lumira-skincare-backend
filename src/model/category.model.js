@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import slugify from "slugify"
 
 const categorySchema = new mongoose.Schema(
     {
@@ -27,6 +28,21 @@ const categorySchema = new mongoose.Schema(
     },
     { timestamps: true }
 )
+
+categorySchema.pre("validate", async function (next) {
+    if (this.isModified("name") || !this.slug) {
+        const baseSlug = slugify(this.name, { lower: true, strict: true });
+        let slug = baseSlug;
+        let counter = 1;
+
+        while (await mongoose.models.Category.exists({ slug, _id: { $ne: this._id } })) {
+            slug = `${baseSlug}-${counter}`;
+            counter++;
+            this.slug = slug;
+        }
+        next();
+    }
+});
 
 const Category = mongoose.model("Category", categorySchema);
 
