@@ -14,8 +14,8 @@ const router = Router()
 router.get("/", getAllCategories)
 router.get("/:slug", getCategoryBySlug)
 
-router.post("/", validate(createCategorySchema), createCategory)
-router.patch("/:id", validate(updateCategorySchema), updateCategory)
+router.post("/", validate(createCategorySchema, "query"), createCategory)
+router.patch("/:id", validate(updateCategorySchema, "query"), updateCategory)
 router.delete("/:id", deleteCategory)
 
 export default router;

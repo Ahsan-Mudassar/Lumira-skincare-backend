@@ -1,14 +1,17 @@
 import { ApiError } from "../utils/ApiError.js"
 
-const validate = (schema) => {
+const validate = (schema, source = "body") => {
     return (err, req, res, next) => {
-        console.error(err)
-        const result = schema.safeParse(req.body)
+        const data = req[source] ?? {};
+        const result = schema.safeParse(data)
 
         if (!result.success) {
-            throw new ApiError(err.status, err.message)
+            const message = result.error.issues
+                .map((i) => `${i.path.join(".") || source}:${i.message}`)
+                .join(", ");
+            return next(new ApiError(err.status, message))
         }
-        req.body = result.data;
+        req.validated = { ...(req.validated || {}), [source]: result.data };
         next()
     }
 }
