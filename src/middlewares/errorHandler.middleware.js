@@ -1,8 +1,5 @@
-// @ts-nocheck
-import { ApiError } from "../utils/ApiError.js";
-
 const notFound = (req, res, next) => {
-  return next(new ApiError(404, `Route not found: ${req.originalUrl}`));
+  return next(res.status(404).json({ statusCode: 404, message: `Route not found: ${req.originalUrl}` }));
 }
 const errorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || 500;

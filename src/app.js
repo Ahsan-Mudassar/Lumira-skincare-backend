@@ -6,6 +6,7 @@ import helmet from "helmet"
 import cookieParser from "cookie-parser"
 import compression from "compression"
 import rateLimit from "express-rate-limit"
+import categoryRoutes from "./routes/category.routes.js"
 import { errorHandler, notFound, duplicateErrorHandler } from "./middlewares/errorHandler.middleware.js";
 
 const app = express();
@@ -39,7 +40,8 @@ app.get("/api/health", (req, res) => {
     res.status(200).json({ sucess: true, message: "API is healthy" });
 });
 
-// routes handle here
+
+app.use("/api/categories",categoryRoutes)
 
 app.use(notFound);
 app.use(duplicateErrorHandler);
