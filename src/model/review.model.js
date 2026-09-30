@@ -16,17 +16,17 @@ const reviewSchema = new mongoose.Schema({
         required: true,
         min: 1,
         max: 5,
-        validate:{
-            validator:Number.isInteger,
-            message:"Rating must be an integer"
+        validate: {
+            validator: Number.isInteger,
+            message: "Rating must be an integer"
         }
     },
     comment: {
         type: String,
         required: true,
-        trim:true,
-        minlength:10,
-        maxlength:1000
+        trim: true,
+        minlength: 10,
+        maxlength: 1000
     },
     isApproved: {
         type: Boolean,

@@ -78,7 +78,11 @@ const productSchema = new mongoose.Schema(
             type: Number,
             required: [true, "Product stock is required"],
             min: [0, "Product stock must be greater than or equal to 0"],
-            default: 0
+            default: 0,
+            validate: {
+                validator: Number.isInteger,
+                message: "Stock must be an whole number"
+            }
         },
         sku: {
             type: String,
@@ -124,5 +128,6 @@ productSchema.pre("validate", async function () {
 productSchema.index({ category: 1 });
 productSchema.index({ isActive: 1, createdAt: -1 });
 productSchema.index({ name: "text", description: "text" });
+productSchema.index({ isActive: 1, category: 1, price: 1 })
 
 export const Product = mongoose.model('Product', productSchema);

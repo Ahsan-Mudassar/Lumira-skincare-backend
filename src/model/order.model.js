@@ -30,19 +30,19 @@ const orderItemSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: 0,
-        validate:{
-            validator:Number.isInteger,
-            message:"price must be an whole number"
+        validate: {
+            validator: Number.isInteger,
+            message: "price must be an whole number"
         }
     },
     quantity: {
         type: Number,
         required: true,
         min: 1,
-        max:10,
-        validate:{
-            validator:Number.isInteger,
-            message:"Quantity must be an whole number"
+        max: 10,
+        validate: {
+            validator: Number.isInteger,
+            message: "Quantity must be an whole number"
         }
     },
     lineTotal: {
@@ -85,7 +85,7 @@ const orderSchema = new mongoose.Schema({
         email: {
             type: String,
             required: true,
-            lowercase:true,
+            lowercase: true,
             trim: true
         },
         phone: {
@@ -113,12 +113,16 @@ const orderSchema = new mongoose.Schema({
     },
     items: {
         type: [orderItemSchema],
-        validate: {
-            validator: function (value) {
-                return value.length > 0;
+        validate: [
+            {
+                validator: (v) => v.length > 0,
+                message: "Order must have at least one item"
             },
-            message: "Order must have at least one item"
-        }
+            {
+                validator: (v) => v.length <= 20,
+                message: "Order cannot have more than 20 items"
+            },
+        ]
     },
     subtotal: {
         type: Number,
