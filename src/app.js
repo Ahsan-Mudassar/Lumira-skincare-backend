@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser"
 import compression from "compression"
 import rateLimit from "express-rate-limit"
 import categoryRoutes from "./routes/category.routes.js"
+import productsRoutes from "./routes/product.routes.js"
 import { errorHandler, notFound, duplicateErrorHandler } from "./middlewares/errorHandler.middleware.js";
 
 const app = express();
@@ -41,6 +42,7 @@ app.get("/api/health", (req, res) => {
 });
 
 
+app.use("/api/products",productsRoutes)
 app.use("/api/categories",categoryRoutes)
 
 app.use(notFound);
