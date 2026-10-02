@@ -19,6 +19,7 @@ import {
     updateProductSchema,
     updateStockSchema
 } from "../validation/product.validation.js";
+import upload from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get("/:slug", validate(slugParamSchema, "params"), getProductBySlug);
 
 router.use(protect, adminOnly);
 
-router.post("/", validate(createProductSchema), createProduct);
+router.post("/", validate(createProductSchema), upload.single("images"), createProduct);
 
 router.patch(
     "/:id/stock",
@@ -43,6 +44,7 @@ router.patch(
     "/:id",
     validate(idParamSchema, "params"),
     validate(updateProductSchema),
+    upload.single("images"),
     updateProduct
 );
 

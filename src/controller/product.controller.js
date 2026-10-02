@@ -4,6 +4,7 @@ import asyncHandler from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { escapeRegex } from "../utils/escapeRegex.js"
+import { deleteImage, uploadImage } from "../services/cloudinary.service.js"
 
 
 const LIST_FIELDS = [
@@ -26,7 +27,7 @@ const toPublicCard = (p) => ({
     price: p.price,
     discountPrice: p.discountPrice,
     finalPrice: p.finalPrice ?? p.price,
-    images: Array.isArray(p.images) ? p.images[0] : p.images,
+    images: p.images,
     category: p.category,
     isFeatured: p.isFeatured,
     ratingAverage: p.ratingAverage,
@@ -47,9 +48,8 @@ const toPublicDetail = (p) => {
 }
 
 const getAllProducts = asyncHandler(async (req, res) => {
-    // console.log(req.validated.query);
     const query = req.validated?.query ?? req.query;
-    // ?category=serums&skinType=oil&minPrice=500&sort=price_desc&page=1&limit=6
+
     const { category, skinType, minPrice, maxPrice, search, sort, page, limit } = query;
 
     const filter = { isActive: true };
@@ -159,14 +159,49 @@ const getProductBySlug = asyncHandler(async (req, res) => {
 })
 
 const createProduct = asyncHandler(async (req, res) => {
-    const data = req.validated?.body ?? req.body;
+    const { skinType, ingredients, ...data } = req.validated?.body ?? req.body;
 
     const exist = await Category.exists({ _id: data.category });
     if (!exist) {
         throw new ApiError(404, `Category with id ${data.category} not found`);
     }
+    let parseskin = []
+    let parseingredients = []
+    if (skinType) {
+        try {
+            parseskin.push(...JSON.parse(skinType))
+            parseingredients.push(...JSON.parse(ingredients))
+        } catch (err) {
+            throw new ApiError(400, "Invalid skinType format. Must be a valid JSON array of strings.");
+        }
+    }
 
-    const product = await Product.create(data);
+    const productExist = await Product.exists({ name: data.name });
+    if (productExist) {
+        throw new ApiError(409, `Product with name ${data.name} already exists`);
+    }
+
+    if (!req.file) {
+        throw new ApiError(400, "Product images files are required");
+    }
+
+    const uploadResult = await uploadImage(req.file.buffer);
+    if (!uploadResult.secure_url || !uploadResult.public_id) {
+        throw new ApiError(400, "Image upload failed");
+    }
+    
+    const product = await Product.create(
+        {
+            ...data,
+            skinType: parseskin,
+            ingredients: parseingredients,
+            images: {
+                url: [uploadResult.secure_url],
+                publicId: [uploadResult.public_id]
+            }
+        }
+    );
+
     res.status(201).json(
         new ApiResponse(
             201,
@@ -176,11 +211,10 @@ const createProduct = asyncHandler(async (req, res) => {
             "Product created successfully"
         )
     )
-
 })
 
 const updateProduct = asyncHandler(async (req, res) => {
-    const { id } = req.validated?.params ??req.params;
+    const { id } = req.validated?.params ?? req.params;
     const updates = req.validated?.body ?? req.body;
 
     const product = await Product.findById(id)
@@ -192,7 +226,25 @@ const updateProduct = asyncHandler(async (req, res) => {
             throw new ApiError(404, `Category with id ${updates.category} not found`);
         }
     }
+
     const { discountPrice, ...fields } = updates;
+
+    if (req.file) {
+        try {
+            const uploadResult = await uploadImage(req.file?.buffer);
+            await deleteImage(product?.images?.publicId);
+
+
+            product.images = {
+                url: [uploadResult.secure_url],
+                publicId: [uploadResult.public_id]
+            }
+        } catch (err) {
+            throw new ApiError(400, "Image upload failed: " + err.message);
+        }
+    }
+
+
     product.set(fields);
     if (discountPrice !== undefined) {
         product.discountPrice = discountPrice === null ? undefined : discountPrice;
@@ -237,7 +289,7 @@ const updateStock = asyncHandler(async (req, res) => {
         new ApiResponse(
             200,
             {
-                product
+                product: toPublicDetail(product)
             },
             "Product stock updated successfully"
         )
@@ -256,10 +308,11 @@ const deleteProducts = asyncHandler(async (req, res) => {
     if (!products) {
         throw new ApiError(404, `Product not found`);
     }
+
     res.status(200).json(
         new ApiResponse(
             200,
-            products,
+            {},
             "Product deleted successfully"
         )
     );

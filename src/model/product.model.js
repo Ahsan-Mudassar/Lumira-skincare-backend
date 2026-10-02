@@ -53,11 +53,13 @@ const productSchema = new mongoose.Schema(
             select: false
         },
         images: {
-            type: [String],
-            required: [true, "Product images are required"],
-            validate: {
-                validator: (arr) => arr.length > 0,
-                message: "Product images must be a valid URL ending with .jpg or .png"
+            url: {
+                type: [String],
+                required: [true, "Product images are required"]
+            },
+            publicId: {
+                type: [String],
+                required: [true, "Product images publicId are required"],
             }
         },
         ingredients: {
