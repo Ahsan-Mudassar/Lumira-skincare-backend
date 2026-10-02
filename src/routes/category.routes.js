@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { protect, adminOnly } from "../middlewares/auth.middleware.js";
 import {
     createCategory,
     deleteCategory,
@@ -14,6 +15,7 @@ const router = Router()
 router.get("/", getAllCategories)
 router.get("/:slug", getCategoryBySlug)
 
+router.use(protect, adminOnly)
 router.post("/", validate(createCategorySchema, "query"), createCategory)
 router.patch("/:id", validate(updateCategorySchema, "query"), updateCategory)
 router.delete("/:id", deleteCategory)

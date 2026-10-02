@@ -50,15 +50,13 @@ const getCategoryBySlug = asyncHandler(async (req, res) => {
 })
 
 const createCategory = asyncHandler(async (req, res) => {
-    const { name, image } = req.body
+    const { name } = req.body
 
     if (!name || !name.trim()) throw new ApiError(400, "Name is required")
-    if (!image) throw new ApiError(400, "Image is required")
 
     const category = await Category.create(
         {
-            name: name.trim(),
-            image: image
+            name: name.trim()
         }
     )
 
@@ -74,24 +72,22 @@ const updateCategory = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid category ID")
     }
 
-    const category = Category.findById(id);
+    const category = await Category.findOne({ _id: id });
     if (!category) throw new ApiError(404, "Category not found")
 
-    const { name, image } = req.body;
+    const { name } = req.body;
 
     if (name !== undefined) {
         if (!name.trim()) throw new ApiError(400, "Category name is required")
         category.name = name.trim();
     }
 
-    if (image !== undefined) category.image = image;
-
     await category.save();
 
     res
         .status(200)
         .json(
-            new ApiResponse(200, "Category update successfully")
+            new ApiResponse(200, category, "Category update successfully")
         )
 })
 
@@ -102,12 +98,12 @@ const deleteCategory = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid category ID")
     }
 
-    const category = await Category.findOne(id);
+    const category = await Category.findOne({ _id: id });
 
     if (!category) throw new ApiError(404, "Category not found")
     const hasProducts = await Product.exists({ category: id })
 
-    if (!hasProducts) {
+    if (hasProducts) {
         throw new ApiError(409, "Category has products first move or remove them.")
     }
 

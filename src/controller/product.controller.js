@@ -159,7 +159,7 @@ const getProductBySlug = asyncHandler(async (req, res) => {
 })
 
 const createProduct = asyncHandler(async (req, res) => {
-    const data = req.validated.body;
+    const data = req.validated?.body ?? req.body;
 
     const exist = await Category.exists({ _id: data.category });
     if (!exist) {
@@ -180,8 +180,8 @@ const createProduct = asyncHandler(async (req, res) => {
 })
 
 const updateProduct = asyncHandler(async (req, res) => {
-    const { id } = req.validated.params;
-    const updates = req.validated.body;
+    const { id } = req.validated?.params ??req.params;
+    const updates = req.validated?.body ?? req.body;
 
     const product = await Product.findById(id)
     if (!product) throw new ApiError(404, `Product with id ${id} not found`);
@@ -214,8 +214,8 @@ const updateProduct = asyncHandler(async (req, res) => {
 })
 
 const updateStock = asyncHandler(async (req, res) => {
-    const { id } = req.validated.params;
-    const { stock, adjustBy } = req.validated.body;
+    const { id } = req.validated?.params ?? req.params;
+    const { stock, adjustBy } = req.validated?.body ?? req.body;
 
     const isDecrease = adjustBy !== undefined && adjustBy < 0;
     const filter = isDecrease ? { _id: id, stock: { $gte: Math.abs(adjustBy) } } : { _id: id };
@@ -246,7 +246,7 @@ const updateStock = asyncHandler(async (req, res) => {
 })
 
 const deleteProducts = asyncHandler(async (req, res) => {
-    const { id } = req.validated.body;
+    const { id } = req.validated?.params ?? req.params;
     const products = await Product.findByIdAndUpdate(
         id,
         { $set: { isActive: false } },

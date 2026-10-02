@@ -24,6 +24,13 @@ const userSchema = new mongoose.Schema({
         enum: ["admin"],
         default: "admin"
     },
+    tokenVersion: {
+        type: Number,
+        default: 0
+    },
+    lastLogin: {
+        type: Date
+    },
     isActive: {
         type: Boolean,
         default: true

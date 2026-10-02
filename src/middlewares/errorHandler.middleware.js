@@ -1,19 +1,23 @@
+import { ApiError } from "../utils/ApiError.js";
+
 const notFound = (req, res, next) => {
-  return next(res.status(404).json({ statusCode: 404, message: `Route not found: ${req.originalUrl}` }));
+  next(new ApiError(404, `Cannot ${req.method} ${req.originalUrl}`));
 }
 const errorHandler = (err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
   const statusCode = err.statusCode || 500;
   res.status(statusCode).json({
     success: false,
     message: err.message,
     errors: err.errors || [],
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+    stack:process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 };
 
 const duplicateErrorHandler = (err, req, res, next) => {
-  console.error(err);
-
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue || {})[0];
     const value = err.keyValue[field];
@@ -21,6 +25,8 @@ const duplicateErrorHandler = (err, req, res, next) => {
 
     return next(new ApiError(409, message));
   }
+
+  next(err);
 }
 
 export { notFound, errorHandler, duplicateErrorHandler };

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { protect, adminOnly } from "../middlewares/auth.middleware.js";
 import {
     getAllProducts,
     getFeaturedProducts,
@@ -26,6 +27,8 @@ router.get("/", validate(listProductsQuerySchema, "query"), getAllProducts);
 router.get("/featured", validate(featuredQuerySchema, "query"), getFeaturedProducts);
 
 router.get("/:slug", validate(slugParamSchema, "params"), getProductBySlug);
+
+router.use(protect, adminOnly);
 
 router.post("/", validate(createProductSchema), createProduct);
 
