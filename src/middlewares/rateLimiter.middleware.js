@@ -22,5 +22,29 @@ const LoginRateLimiter = rateLimit({
     }
 })
 
+const orderLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 10,
+    skipFailedRequests: true,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many orders from this network. Please try again later."
+    }
+});
 
-export { rateLimiterMiddleware, LoginRateLimiter };
+const trackLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    skipSuccessfulRequests: true,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many attempts. Please try again in 15 minutes."
+    }
+});
+
+
+export { rateLimiterMiddleware, LoginRateLimiter, orderLimiter, trackLimiter };

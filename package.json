@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "seed":"node src/seed/seedAdmin.js",
+    "seed": "node src/seed/seedAdmin.js",
     "start": "node -r dotenv/config src/server.js",
     "dev": "nodemon -r dotenv/config src/server.js"
   },
@@ -28,6 +28,7 @@
     "morgan": "^1.12.1",
     "multer": "^2.4.0",
     "nodemailer": "^10.0.12",
+    "resend": "^6.32.0",
     "slugify": "^1.6.9",
     "zod": "^4.6.5"
   },

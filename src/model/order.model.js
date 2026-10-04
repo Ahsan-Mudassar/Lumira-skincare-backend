@@ -61,6 +61,15 @@ const statusHistorySchema = new mongoose.Schema({
     changedAt: {
         type: Date,
         default: Date.now
+    },
+    note: {
+        type: String,
+        trim: true,
+        maxlength: 60
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
     }
 }, { _id: false })
 
@@ -146,6 +155,11 @@ const orderSchema = new mongoose.Schema({
         min: 0,
         default: 0
     },
+    idempotencyKey: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
     status: {
         type: String,
         enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
@@ -159,7 +173,15 @@ const orderSchema = new mongoose.Schema({
     emailSent: {
         type: Boolean,
         default: false
-    }
+    },
+    emailSentAt: {
+        type: Date
+    },
+    emailError: {
+        type: String,
+        trim: true,
+        maxlength: 300
+    },
 }, {
     timestamps: true
 });
@@ -170,9 +192,9 @@ orderSchema.pre("validate", function () {
     this.total = this.subtotal + this.shippingFee;
 });
 
-orderSchema.index({ createdAt: -1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ "items.product": 1 })
 orderSchema.index({ customer: 1, createdAt: -1 })
+orderSchema.index({ "customerSnapshot.phone": 1 })
 
 export const Order = mongoose.model("Order", orderSchema);
