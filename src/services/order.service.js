@@ -5,9 +5,8 @@ import { Order } from "../model/order.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { getNextOrderNumber } from "../utils/getNextOrderNumber.js";
 import { calculateShippingFee } from "../config/store.js";
-import asyncHandler from "../utils/asyncHandler.js";
 import { ORDER_STATUS_TRANSITIONS } from "../constants/order.constant.js";
-import { escapeRegex } from "../utils/escapeRegex.js";   
+import { escapeRegex } from "../utils/escapeRegex.js";
 import { sendOrderNotification } from "./email.service.js";
 
 export const dispatchOrderEmail = async (order, { force = false } = {}) => {
@@ -20,7 +19,7 @@ export const dispatchOrderEmail = async (order, { force = false } = {}) => {
         { _id: order._id },
         result.ok
             ? { $set: { emailSent: true, emailSentAt: new Date() }, $unset: { emailError: "" } }
-            : { $set: { emailError: String(result.error).slice(0, 300) } }  
+            : { $set: { emailError: String(result.error).slice(0, 300) } }
     );
 
     return result;
@@ -28,15 +27,15 @@ export const dispatchOrderEmail = async (order, { force = false } = {}) => {
 
 export const resendOrderEmail = async ({ orderId, force }) => {
     const order = await Order.findById(orderId);
-    if (!order) throw new ApiError("Order not found", 404);
+    if (!order) throw new ApiError(404, "Order not found");
 
     if (order.emailSent && !force) {
-        throw new ApiError("Email was already sent. Use ?force=true to send it again", 409);
+        throw new ApiError(409, "Email was already sent. Use ?force=true to send it again");
     }
 
     const result = await dispatchOrderEmail(order, { force: order.emailSent });
 
-    if (!result.ok) throw new ApiError(`Email could not be sent: ${result.error}`, 502);
+    if (!result.ok) throw new ApiError(502, `Email could not be sent: ${result.error}`);
     return result;
 };
 
@@ -53,7 +52,7 @@ const buildOrderFilter = ({ status, from, to, search }) => {
     if (from || to) {
         filter.createdAt = {};
         if (from) filter.createdAt.$gte = from;
-        if (to) filter.createdAt.$lt = to;    
+        if (to) filter.createdAt.$lt = to;
     }
 
     if (search) {
@@ -98,7 +97,7 @@ export const getOrderDetail = async (orderId) => {
         .populate("statusHistory.updatedBy", "name email")
         .lean();
 
-    if (!order) throw new ApiError("Order not found", 404);
+    if (!order) throw new ApiError(404, "Order not found");
     return order;
 };
 
@@ -110,13 +109,13 @@ export const changeOrderStatus = async ({ orderId, nextStatus, note, adminId }) 
 
         await session.withTransaction(async () => {
             const order = await Order.findById(orderId).session(session);
-            if (!order) throw new ApiError("Order not found", 404);
+            if (!order) throw new ApiError(404, "Order not found");
 
             const allowed = ORDER_STATUS_TRANSITIONS[order.status] ?? [];
             if (!allowed.includes(nextStatus)) {
                 throw new ApiError(
-                    `Cannot change status from "${order.status}" to "${nextStatus}"`,
-                    409
+                    409,
+                    `Cannot change status from "${order.status}" to "${nextStatus}"`
                 );
             }
 
@@ -130,11 +129,11 @@ export const changeOrderStatus = async ({ orderId, nextStatus, note, adminId }) 
             updated = await Order.findOneAndUpdate(
                 { _id: orderId, status: order.status },
                 { $set: { status: nextStatus }, $push: { statusHistory: historyEntry } },
-                { new: true, session }                             
+                { returnDocument: 'after', session }
             );
 
             if (!updated) {
-                throw new ApiError("Order was updated by someone else. Please refresh.", 409);
+                throw new ApiError(409, "Order was updated by someone else. Please refresh.");
             }
 
             if (nextStatus === "cancelled") {
@@ -145,7 +144,7 @@ export const changeOrderStatus = async ({ orderId, nextStatus, note, adminId }) 
                             update: { $inc: { stock: item.quantity } }
                         }
                     })),
-                    { session }                                  
+                    { session }
                 );
             }
         });
@@ -207,7 +206,7 @@ export const trackOrder = async ({ orderNumber, email }) => {
         "customerSnapshot.email": email
     }).lean();
 
-    if (!order) throw new ApiError("Order not found", 404);
+    if (!order) throw new ApiError(404, "Order not found");
     return order;
 };
 
@@ -223,7 +222,7 @@ export const toPublicTracking = (order) => ({
     createdAt: order.createdAt
 });
 
-export const createOrder = asyncHandler(async ({ customer, shippingAddress, items, idempotencyKey }) => {
+export const createOrder = async ({ customer, shippingAddress, items, idempotencyKey }) => {
     if (idempotencyKey) {
         const existing = await Order.findOne({ idempotencyKey });
         if (existing) return { order: existing, replayed: true };
@@ -237,7 +236,7 @@ export const createOrder = asyncHandler(async ({ customer, shippingAddress, item
     const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
     if (productMap.size !== productIds.length) {
-        throw new ApiError("Some items in your cart are no longer available", 400);
+        throw new ApiError(400, "Some items in your cart are no longer available");
     }
 
     const lines = items.map((item) => {
@@ -297,7 +296,7 @@ export const createOrder = asyncHandler(async ({ customer, shippingAddress, item
                 );
 
                 if (result.modifiedCount === 0) {
-                    throw new ApiError(`Not enough stock for "${line.snapshot.name}"`, 409);
+                    throw new ApiError(409, `Not enough stock for "${line.snapshot.name}"`);
                 }
             }
 
@@ -315,4 +314,4 @@ export const createOrder = asyncHandler(async ({ customer, shippingAddress, item
     } finally {
         await session.endSession();
     }
-});
+};

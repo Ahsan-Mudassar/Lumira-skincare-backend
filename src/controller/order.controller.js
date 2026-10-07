@@ -2,15 +2,15 @@ import {
     createOrder as placeOrder,
     trackOrder as findOrderForTracking,
     toPublicOrder,
-    toPublicTracking
+    toPublicTracking,
+    dispatchOrderEmail
 } from "../services/order.service.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { dispatchOrderEmail } from "../services/order.service.js";
 
 export const createOrder = asyncHandler(async (req, res) => {
-    const { customer, shippingAddress, items } = req.validated.body ?? req.body;
-    const idempotencyKey = req.validated.headers?.["idempotency-key"];
+    const { customer, shippingAddress, items } = req.validated?.body ?? req.body;
+    const idempotencyKey = req.validated?.headers?.["idempotency-key"] ?? req.headers["idempotency-key"];
 
     const { order, replayed } = await placeOrder({
         customer,
@@ -30,12 +30,12 @@ export const createOrder = asyncHandler(async (req, res) => {
         new ApiResponse(201, toPublicOrder(order), "Order placed successfully")
     );
     dispatchOrderEmail(order).catch((err) =>
-    console.error(`[email] ${order.orderNumber}:`, err.message)
-);
+        console.error(`[email] ${order.orderNumber}:`, err.message)
+    );
 });
 
 export const trackOrder = asyncHandler(async (req, res) => {
-    const { orderNumber, email } = req.validated.body;
+    const { orderNumber, email } = req.validated?.body ?? req.body;
 
     const order = await findOrderForTracking({ orderNumber, email });
 
