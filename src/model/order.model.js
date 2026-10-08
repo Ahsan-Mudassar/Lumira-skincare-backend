@@ -196,5 +196,6 @@ orderSchema.index({ status: 1 });
 orderSchema.index({ "items.product": 1 })
 orderSchema.index({ customer: 1, createdAt: -1 })
 orderSchema.index({ "customerSnapshot.phone": 1 })
+orderSchema.index({ status: 1, createdAt: -1 });
 
 export const Order = mongoose.model("Order", orderSchema);

@@ -94,6 +94,16 @@ const productSchema = new mongoose.Schema(
             trim: true,
             maxlength: [50, "Product SKU must be less than 50 characters"]
         },
+        ratingAverage: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 5
+        },
+        ratingCount: {
+            type: Number,
+            default: 0, min: 0
+        },
         isFeatured: {
             type: Boolean,
             default: false
@@ -131,5 +141,6 @@ productSchema.index({ category: 1 });
 productSchema.index({ isActive: 1, createdAt: -1 });
 productSchema.index({ name: "text", description: "text" });
 productSchema.index({ isActive: 1, category: 1, price: 1 })
+productSchema.index({ isActive: 1, stock: 1 });
 
 export const Product = mongoose.model('Product', productSchema);

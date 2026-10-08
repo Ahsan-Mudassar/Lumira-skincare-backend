@@ -14,6 +14,7 @@ export const STORE = Object.freeze({
     currency: "PKR",
     shippingFee: intFromEnv("SHIPPING_FEE", 250, { max: 10_000 }),
     freeShippingThreshold: intFromEnv("FREE_SHIPPING_THRESHOLD", 3000, { max: 1_000_000 }),
+    lowStockThreshold: intFromEnv("LOW_STOCK_THRESHOLD", 5, { max: 1000 }),
     utcOffset: "+05:00",
     orderPrefix: "LUM",
     orderNumberPad: 4

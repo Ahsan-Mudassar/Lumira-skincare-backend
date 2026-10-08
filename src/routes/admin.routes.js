@@ -14,6 +14,29 @@ import {
     resendEmailQuerySchema,
     updateOrderStatusSchema
 } from "../validation/order.validation.js";
+import {
+    getLowStockStats,
+    getOverviewStats,
+    getSalesStats,
+    getTopProductsStats,
+    getUnsoldProductsStats
+} from "../controller/admin.stats.controller.js";
+import {
+    lowStockQuerySchema,
+    salesQuerySchema,
+    topProductsQuerySchema,
+    unsoldQuerySchema
+} from "../validation/stats.validation.js";
+import {
+    adminReviewListQuerySchema,
+    reviewApprovalSchema,
+    reviewIdParamSchema
+} from "../validation/review.validation.js";
+import {
+    getAdminReviews,
+    removeReview,
+    updateReviewApproval
+} from "../controller/admin.review.controller.js";
 
 const router = Router();
 
@@ -35,5 +58,22 @@ router.post(
     validate(resendEmailQuerySchema, "query"),
     resendEmail
 );
+
+router.get("/stats/overview", getOverviewStats);
+router.get("/stats/sales", validate(salesQuerySchema, "query"), getSalesStats);
+router.get("/stats/top-products", validate(topProductsQuerySchema, "query"), getTopProductsStats);
+router.get("/stats/unsold-products", validate(unsoldQuerySchema, "query"), getUnsoldProductsStats);
+router.get("/stats/low-stock", validate(lowStockQuerySchema, "query"), getLowStockStats);
+
+router.get("/reviews", validate(adminReviewListQuerySchema, "query"), getAdminReviews);
+
+router.patch(
+    "/reviews/:id/approval",
+    validate(reviewIdParamSchema, "params"),
+    validate(reviewApprovalSchema),
+    updateReviewApproval
+);
+
+router.delete("/reviews/:id", validate(reviewIdParamSchema, "params"), removeReview);
 
 export default router;

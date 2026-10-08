@@ -20,6 +20,8 @@ import {
     updateStockSchema
 } from "../validation/product.validation.js";
 import upload from "../middlewares/multer.middleware.js";
+import { getProductReviews } from "../controller/review.controller.js";
+import { productReviewsQuerySchema } from "../validation/review.validation.js";
 
 const router = Router();
 
@@ -28,6 +30,13 @@ router.get("/", validate(listProductsQuerySchema, "query"), getAllProducts);
 router.get("/featured", validate(featuredQuerySchema, "query"), getFeaturedProducts);
 
 router.get("/:slug", validate(slugParamSchema, "params"), getProductBySlug);
+
+router.get(
+    "/:slug/reviews",
+    validate(slugParamSchema, "params"),
+    validate(productReviewsQuerySchema, "query"),
+    getProductReviews
+);
 
 router.use(protect, adminOnly);
 

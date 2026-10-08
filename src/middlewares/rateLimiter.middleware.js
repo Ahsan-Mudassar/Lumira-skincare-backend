@@ -46,5 +46,13 @@ const trackLimiter = rateLimit({
     }
 });
 
+const reviewLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 10,
+    skipSuccessfulRequests: true,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Too many attempts. Please try again later." }
+});
 
-export { rateLimiterMiddleware, LoginRateLimiter, orderLimiter, trackLimiter };
+export { rateLimiterMiddleware, LoginRateLimiter, orderLimiter, trackLimiter, reviewLimiter };

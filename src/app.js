@@ -12,6 +12,7 @@ import categoryRoutes from "./routes/category.routes.js"
 import productsRoutes from "./routes/product.routes.js"
 import orderRoutes from "./routes/order.routes.js"
 import adminRoutes from "./routes/admin.routes.js"
+import reviewRoutes from "./routes/review.routes.js";
 import { errorHandler, notFound, duplicateErrorHandler } from "./middlewares/errorHandler.middleware.js";
 
 const app = express();
@@ -43,6 +44,7 @@ app.use("/api/products", productsRoutes)
 app.use("/api/categories", categoryRoutes)
 app.use("/api/orders", orderRoutes)
 app.use("/api/admin", adminRoutes)
+app.use("/api/reviews", reviewRoutes);       
 
 app.use(notFound);
 app.use(duplicateErrorHandler);
