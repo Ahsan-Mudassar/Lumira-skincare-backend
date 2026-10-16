@@ -24,7 +24,17 @@ const orderItemSchema = new mongoose.Schema({
     image: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        validate: {
+            validator: (value) => {
+                try {
+                    return new URL(value).protocol === "https:";
+                } catch {
+                    return false;
+                }
+            },
+            message: "Order item image must be a valid HTTPS URL"
+        }
     },
     price: {
         type: Number,

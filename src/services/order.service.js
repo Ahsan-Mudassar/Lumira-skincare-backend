@@ -41,7 +41,7 @@ export const resendOrderEmail = async ({ orderId, force }) => {
 
 const getMainImage = (product) => {
     const first = product.images?.url?.[0];
-    return typeof first === "string" || first;
+    return typeof first === "string" && first.trim() ? first : undefined;
 };
 
 const buildOrderFilter = ({ status, from, to, search }) => {

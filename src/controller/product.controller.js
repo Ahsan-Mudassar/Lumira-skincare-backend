@@ -26,7 +26,7 @@ const toPublicCard = (p) => ({
     slug: p.slug,
     price: p.price,
     discountPrice: p.discountPrice,
-    finalPrice: p.finalPrice ?? p.price,
+    finalPrice: p.discountPrice != null && p.discountPrice < p.price ? p.discountPrice : p.price,
     images: p.images,
     category: p.category,
     isFeatured: p.isFeatured,
@@ -41,7 +41,7 @@ const toPublicDetail = (p) => {
     const { stock, _v, ...rest } = p;
     return {
         ...rest,
-        finalPrice: p.finalPrice ?? p.price,
+        finalPrice: p.discountPrice != null && p.discountPrice < p.price ? p.discountPrice : p.price,
         inStock: stock > 0,
         stockStatus: p.stock === 0 ? "out_of_stock" : p.stock <= 5 ? "low_stock" : "in_stock",
     }
@@ -65,20 +65,39 @@ const getAllProducts = asyncHandler(async (req, res) => {
     }
 
     if (skinType) {
-        const types = skinType.split(",").map(t => t.trim()).filter(Boolean);
-        if (types.length > 0) {
-            filter.skinType = { $in: types };
-        }
+        const skinTypesArray = skinType.split(',')
+        filter.skinType = { $in: skinTypesArray };
     }
 
-    if (minPrice !== undefined || maxPrice !== undefined) {
-        filter.finalPrice = {};
-        if (minPrice !== undefined) {
-            filter.finalPrice.$gte = minPrice;
+    const min = minPrice !== undefined && minPrice !== "" ? Number(minPrice) : undefined
+    const max = maxPrice !== undefined && maxPrice !== "" ? Number(maxPrice) : undefined
+
+
+    if (min !== undefined || max !== undefined) {
+        const effectivePrice = {
+            $cond: [
+                {
+                    $and: [
+                        { $ne: [{ $ifNull: ["$discountPrice", null] }, null] },
+                        { $gt: ["$discountPrice", 0] },
+                        { $lt: ["$discountPrice", "$price"] }
+                    ]
+                },
+                "$discountPrice",
+                "$price"
+            ]
+        };
+        const priceRange = [];
+        if (min !== undefined && !isNaN(min)) {
+            priceRange.push({ $gte: [effectivePrice, min] });
         }
-        if (maxPrice !== undefined) {
-            filter.finalPrice.$lte = maxPrice;
+        if (max !== undefined && !isNaN(max)) {
+            priceRange.push({ $lte: [effectivePrice, max] });
         }
+        if (priceRange.length > 0) {
+            filter.$expr = { $and: priceRange };
+        }
+
     }
 
     if (search) {
@@ -108,7 +127,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
                     limit,
                     total,
                     totalPages,
-                    hasnext: page < totalPages
+                    hasNext: page < totalPages
                 },
                 data
             },
@@ -189,7 +208,7 @@ const createProduct = asyncHandler(async (req, res) => {
     if (!uploadResult.secure_url || !uploadResult.public_id) {
         throw new ApiError(400, "Image upload failed");
     }
-    
+
     const product = await Product.create(
         {
             ...data,

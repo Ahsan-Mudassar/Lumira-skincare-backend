@@ -21,7 +21,8 @@ app.set("trust proxy", 1);
 app.use(helmet());
 app.use(cors({
     origin: process.env.CLIENT_URI,
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'idempotency-key']
 }));
 app.use(
     morgan(process.env.NODE_ENV === "development" ? "dev" : "combined", {
@@ -44,7 +45,7 @@ app.use("/api/products", productsRoutes)
 app.use("/api/categories", categoryRoutes)
 app.use("/api/orders", orderRoutes)
 app.use("/api/admin", adminRoutes)
-app.use("/api/reviews", reviewRoutes);       
+app.use("/api/reviews", reviewRoutes);
 
 app.use(notFound);
 app.use(duplicateErrorHandler);
