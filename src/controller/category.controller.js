@@ -4,6 +4,7 @@ import asyncHandler from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import mongoose from "mongoose"
+import { deleteImage, uploadImage } from "../services/cloudinary.service.js"
 
 const getAllCategories = asyncHandler(async (req, res) => {
 
@@ -50,13 +51,31 @@ const getCategoryBySlug = asyncHandler(async (req, res) => {
 })
 
 const createCategory = asyncHandler(async (req, res) => {
-    const { name } = req.body
+    const { name } = req.body;
 
     if (!name || !name.trim()) throw new ApiError(400, "Name is required")
 
+    const categoryExist = await Category.exists({ name: name })
+    if (categoryExist) {
+        throw new ApiError(409, "Category name already exists")
+    }
+
+    if (!req.file) {
+        throw new ApiError(400, "Category image is required");
+    }
+
+    const uploadResult = await uploadImage(req.file.buffer);
+    if (!uploadResult.secure_url || !uploadResult.public_id) {
+        throw new ApiError(400, "Image upload failed");
+    }
+
     const category = await Category.create(
         {
-            name: name.trim()
+            name: name.trim(),
+            image: {
+                url: uploadResult.secure_url,
+                public_id: uploadResult.public_id
+            }
         }
     )
 
@@ -75,13 +94,28 @@ const updateCategory = asyncHandler(async (req, res) => {
     const category = await Category.findOne({ _id: id });
     if (!category) throw new ApiError(404, "Category not found")
 
-    const { name, image } = req.body;
-    if (!image) throw new ApiError(400, "Category image is required")
+    const { name } = req.body;
     if (name !== undefined) {
         if (!name.trim()) throw new ApiError(400, "Category name is required")
         category.name = name.trim();
     }
-    category.image = image;
+
+    if (req.file) {
+        try {
+            const uploadResult = await uploadImage(req?.file?.buffer);
+            await deleteImage(category?.image?.public_id);
+            if (!uploadResult.secure_url || !uploadResult.public_id) {
+                throw new ApiError(400, "Image upload failed");
+            }
+
+            category.image = {
+                url: uploadResult.secure_url,
+                public_id: uploadResult.public_id
+            }
+        } catch (err) {
+            throw new ApiError(400, "Image upload failed: " + err.message);
+        }
+    }
 
     await category.save();
 

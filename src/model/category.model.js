@@ -19,8 +19,14 @@ const categorySchema = new mongoose.Schema(
             match: [/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase letters, numbers and hyphens only"],
         },
         image: {
-            type: String,
-            required: true
+            url: {
+                type: String,
+                required: true
+            },
+            public_id: {
+                type: String,
+                required: true
+            }
         },
         isActive: {
             type: Boolean,

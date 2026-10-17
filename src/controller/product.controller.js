@@ -263,7 +263,6 @@ const updateProduct = asyncHandler(async (req, res) => {
         }
     }
 
-
     product.set(fields);
     if (discountPrice !== undefined) {
         product.discountPrice = discountPrice === null ? undefined : discountPrice;
