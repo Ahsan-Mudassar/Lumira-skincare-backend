@@ -105,14 +105,17 @@ const getAllProducts = asyncHandler(async (req, res) => {
     }
 
     const skip = (page - 1) * limit;
-    const [products, total] = await Promise.all([
+    const notActivefilter = { isActive: false }
+
+    const [products, total, inactive] = await Promise.all([
         Product.find(filter)
             .select(LIST_FIELDS)
             .sort(SORT_MAP[sort])
             .skip(skip)
             .limit(limit)
             .lean(),
-        Product.countDocuments(filter)
+        Product.countDocuments(filter),
+        Product.countDocuments(notActivefilter),
     ]);
     const data = products.map(toPublicCard);
     const totalPages = Math.ceil(total / limit) || 0;
@@ -126,6 +129,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
                     page,
                     limit,
                     total,
+                    inactive,
                     totalPages,
                     hasNext: page < totalPages
                 },
@@ -186,7 +190,7 @@ const createProduct = asyncHandler(async (req, res) => {
     }
     let parseskin = []
     let parseingredients = []
-    if (skinType) {
+    if (!Array.isArray(skinType) || !Array.isArray(ingredients)) {
         try {
             parseskin.push(...JSON.parse(skinType))
             parseingredients.push(...JSON.parse(ingredients))
@@ -194,7 +198,8 @@ const createProduct = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Invalid skinType format. Must be a valid JSON array of strings.");
         }
     }
-
+    const newingredients = (parseingredients.length === 0 || parseingredients.length < 0) ? ingredients : parseingredients
+    const newskinType = (parseskin.length === 0 || parseskin.length < 0) ? skinType : parseskin
     const productExist = await Product.exists({ name: data.name });
     if (productExist) {
         throw new ApiError(409, `Product with name ${data.name} already exists`);
@@ -212,8 +217,8 @@ const createProduct = asyncHandler(async (req, res) => {
     const product = await Product.create(
         {
             ...data,
-            skinType: parseskin,
-            ingredients: parseingredients,
+            skinType: newskinType,
+            ingredients: newingredients,
             images: {
                 url: [uploadResult.secure_url],
                 publicId: [uploadResult.public_id]
@@ -245,14 +250,13 @@ const updateProduct = asyncHandler(async (req, res) => {
             throw new ApiError(404, `Category with id ${updates.category} not found`);
         }
     }
-
+    console.log(product)
     const { discountPrice, ...fields } = updates;
 
     if (req.file) {
         try {
             const uploadResult = await uploadImage(req.file?.buffer);
             await deleteImage(product?.images?.publicId);
-
 
             product.images = {
                 url: [uploadResult.secure_url],

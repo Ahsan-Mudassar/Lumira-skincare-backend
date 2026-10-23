@@ -136,10 +136,18 @@ const deleteCategory = asyncHandler(async (req, res) => {
     const category = await Category.findOne({ _id: id });
 
     if (!category) throw new ApiError(404, "Category not found")
-    const hasProducts = await Product.exists({ category: id })
 
-    if (hasProducts) {
-        throw new ApiError(409, "Category has products first move or remove them.")
+    const [total, active, inactive] = await Promise.all([
+        Product.countDocuments({ category: id }),
+        Product.countDocuments({ category: id, isActive: true }),
+        Product.countDocuments({ category: id, isActive: false }),
+    ])
+
+    if (total > 0) {
+        throw new ApiError(
+            409,
+            `Category has ${total ? `${total}` : 0} products, ${active ? `${active}` : 0} active and ${inactive ? `${inactive}` : 0} not active .Move them to another category first`
+        )
     }
 
     await category.deleteOne();
